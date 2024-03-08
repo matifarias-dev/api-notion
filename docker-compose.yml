@@ -1,0 +1,30 @@
+version: "3.8"
+
+volumes:
+  volumen-api-notion:
+
+services:
+  db-api-notion:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+     - volumen-api-notion:/data/db
+
+  api-notion:
+    build:
+      context: .
+      dockerfile: dockerfile
+    environment:
+      - DB_HOST=db-api-notion
+      - DB_PORT=27017
+    links:
+      - db-api-notion
+    ports:
+        - "3000:3000"
+    restart: always
+    depends_on:
+     - db-api-notion
+    env_file:
+      - ./.env
+    

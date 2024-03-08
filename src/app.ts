@@ -4,7 +4,8 @@ import express from 'express'
 import { readFileSync } from 'fs-extra'
 import http from 'http'
 import https from 'https'
-import meliRouter from './routes/meliRoutes'
+import binomiodb from './db'
+import meliRouter from './routes/meliTokenRoutes'
 import notionRouter from './routes/notionRoutes'
 import checkVersion from './utils/checkVersion'
 import { AMBIENTE, HTTPS_CRT, HTTPS_KEY, PORT } from './utils/env'
@@ -18,6 +19,15 @@ app.use(express.json())
 app.use(loggerHttp)
 app.use(cors())
 
+binomiodb
+  .initialize()
+  .then((datasource) => {
+    logger.info('Connected to db name: ' + String(datasource.options.database))
+  })
+  .catch((err) => {
+    console.log(err)
+  })
+
 let server = http.createServer(app)
 if (AMBIENTE === 'local') {
   logger.info('Ambiente local')
@@ -29,6 +39,7 @@ if (AMBIENTE === 'local') {
     app
   )
 }
+
 server.listen(PORT, () => {
   logger.info(`connected at port: ${PORT}`)
 })

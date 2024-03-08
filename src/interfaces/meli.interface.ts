@@ -1,6 +1,6 @@
-import { type grantTypes, type errorTypes } from '../types/meli.types'
+import { type errorTypes, type grantTypes } from '../types/meli.types'
 
-export interface MeliToken {
+export interface MeliTokenResponse {
   access_token: string
   token_type: grantTypes
   expires_in: number
