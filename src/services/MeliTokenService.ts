@@ -65,7 +65,9 @@ export default class MeliTokenService {
     try {
       const lastToken = await this.getToken()
       if (lastToken === null) {
-        throw new Error('No se encuentra un refresh token valido en db')
+        throw new Error(
+          'No se encuentra un refresh token en db, vuelva a hacer login'
+        )
       }
       const response: AxiosResponse<MeliTokenResponse> = await axios.post(
         'https://api.mercadolibre.com/oauth/token',
@@ -78,7 +80,7 @@ export default class MeliTokenService {
       )
 
       return await this.meliTokenRepository.saveMeliToken(
-        toMeliToken(response.data)
+        toMeliToken(response.data, lastToken._id)
       )
     } catch (err) {
       logger.error(err)
@@ -94,7 +96,7 @@ export default class MeliTokenService {
     )
     setTimeout(
       () => {
-        cron.schedule(`* ${min} /${String(hs)} * * *`, () => {
+        cron.schedule(`* ${min} */${String(hs)} * * *`, () => {
           logger.info('[TASK] Refresh token task has executed')
           this.refreshAuth()
             .then((token) => {
