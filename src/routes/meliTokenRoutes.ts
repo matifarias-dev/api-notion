@@ -16,9 +16,26 @@ meliRouter.get('/auth-success', (req, res) => {
   meliTokenService
     .changeCodeForToken(code)
     .then((data) => {
-      res.status(200).send('Authorization successful')
-      logger.info('Authorization successful: ' + data.accessToken)
-      meliTokenService.startRefreshTask(data.expiresIn)
+      res.status(200).send('Authorization successful ' + data.accessToken)
+      logger.info('Authorization successful: ' + JSON.stringify(data))
+    })
+    .catch((err) => res.status(500).send(err))
+})
+
+meliRouter.get('/auth-token', (_, res) => {
+  meliTokenService
+    .getToken()
+    .then((token) => {
+      res.status(200).send(token)
+    })
+    .catch((err) => res.status(500).send(err))
+})
+
+meliRouter.get('/auth-time-left', (_, res) => {
+  meliTokenService
+    .getAuthTimeLeft()
+    .then((timeLeft) => {
+      res.status(200).send(`Token time left: ${timeLeft}`)
     })
     .catch((err) => res.status(500).send(err))
 })

@@ -30,9 +30,11 @@
   "dependencies": {
     "@notionhq/client": "^2.2.14",
     "@types/fs-extra": "^11.0.4",
+    "@types/node": "^20.11.28",
     "@types/node-cron": "^3.0.11",
     "@types/uuid": "^9.0.8",
     "axios": "^1.6.7",
+    "class-transformer": "^0.5.1",
     "cors": "^2.8.5",
     "dayjs": "^1.11.10",
     "dotenv": "^16.4.5",
@@ -45,6 +47,7 @@
     "node-cron": "^3.0.3",
     "pino": "^8.19.0",
     "pino-pretty": "^10.3.1",
+    "reflect-metadata": "^0.2.1",
     "typeorm": "^0.3.20",
     "uuid": "^9.0.1"
   }

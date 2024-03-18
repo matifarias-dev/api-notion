@@ -1,10 +1,10 @@
 import axios, { type AxiosResponse } from 'axios'
-import cron from 'node-cron'
-import MeliToken from '../entities/MeliToken'
+import dayjs from 'dayjs'
+import type MeliToken from '../entities/MeliToken'
 import { type MeliTokenResponse } from '../interfaces/meli.interface'
 import { toMeliToken } from '../mappers/meli.mapper.'
 import MeliTokenRepository from '../repositories/MeliTokenRepository'
-import { GRANT_TYPE } from '../utils/constants'
+import { GRANT_TYPE, TIME_THRESHOLD } from '../utils/constants'
 import {
   APP_ID_MELI,
   CLIENT_SECRET_MELI,
@@ -13,9 +13,9 @@ import {
 } from '../utils/env'
 import { logger } from '../utils/logger'
 
-export default class MeliTokenService {
-  meliTokenRepository = new MeliTokenRepository()
+const meliTokenRepository = new MeliTokenRepository()
 
+export default class MeliTokenService {
   getAuthURL = (): string =>
     `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${APP_ID_MELI}&redirect_uri=${REDIRECT_MELI_URL}`
 
@@ -33,42 +33,46 @@ export default class MeliTokenService {
       )
 
       const dataStored = await this.getToken()
+      console.log(dataStored)
       if (dataStored === null) {
-        return await this.meliTokenRepository.saveMeliToken(
+        logger.info('Saving new token')
+        return await meliTokenRepository.saveMeliToken(
           toMeliToken(response.data)
         )
       } else {
-        return await this.meliTokenRepository.saveMeliToken(
+        logger.info('Updating token id: ' + String(dataStored._id))
+        return await meliTokenRepository.saveMeliToken(
           toMeliToken(response.data, dataStored._id)
         )
       }
     } catch (err) {
       logger.error(err)
-      throw new Error('error al guardar el token')
+      throw new Error('Error saving new token')
     }
   }
 
   async getToken (): Promise<MeliToken | null> {
-    return await this.meliTokenRepository
+    return await meliTokenRepository
       .getMeliToken({ userId: MELI_USER_ID })
-      .then((token) => {
-        if (token === null) return new MeliToken()
+      .then(async (token) => {
+        if (token === null) {
+          throw new Error('Token not found, please try login again')
+        }
+        if ((await this.getAuthTimeLeft(token)) <= TIME_THRESHOLD) {
+          logger.info('Token expired with id: ' + String(token._id))
+          return await this.refreshAuth(token)
+        }
+        logger.info('ID token found: ' + String(token?._id))
         return token
       })
       .catch((err) => {
-        logger.error('error al obtener el token: ' + err)
-        throw new Error('error al obtener el token')
+        logger.error('Error to get a token: ' + err)
+        return null
       })
   }
 
-  async refreshAuth (): Promise<MeliToken> {
+  async refreshAuth (lastToken: MeliToken): Promise<MeliToken> {
     try {
-      const lastToken = await this.getToken()
-      if (lastToken === null) {
-        throw new Error(
-          'No se encuentra un refresh token en db, vuelva a hacer login'
-        )
-      }
       const response: AxiosResponse<MeliTokenResponse> = await axios.post(
         'https://api.mercadolibre.com/oauth/token',
         {
@@ -79,37 +83,23 @@ export default class MeliTokenService {
         }
       )
 
-      return await this.meliTokenRepository.saveMeliToken(
+      return await meliTokenRepository.saveMeliToken(
         toMeliToken(response.data, lastToken._id)
       )
     } catch (err) {
       logger.error(err)
-      throw new Error('error al obtener refresh token')
+      throw new Error('Error to get a refresh token')
     }
   }
 
-  startRefreshTask (miliseconds: number): void {
-    const hs = miliseconds / 3600 - 1
-    const min = 19800 / 360
-    logger.info(
-      `[TASK] Refresh token task will start in ${String(hs)} hs, ${min} minutos. `
-    )
-    setTimeout(
-      () => {
-        cron.schedule(`* ${min} */${String(hs)} * * *`, () => {
-          logger.info('[TASK] Refresh token task has executed')
-          this.refreshAuth()
-            .then((token) => {
-              logger.info(
-                '[TASK] Authorization task successful: ' + token.refreshToken
-              )
-            })
-            .catch((err) => {
-              logger.error(err)
-            })
-        })
-      },
-      hs * 3600 + 19800
-    )
+  async getAuthTimeLeft (token?: MeliToken | null): Promise<number> {
+    if (token === null || token === undefined) {
+      token = await meliTokenRepository.getMeliToken({
+        userId: MELI_USER_ID
+      })
+      if (token === null) return 0
+    }
+    const now = dayjs()
+    return token.getExpireInDateTime().diff(now, 's')
   }
 }

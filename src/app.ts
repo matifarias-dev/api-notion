@@ -4,19 +4,20 @@ import express from 'express'
 import { readFileSync } from 'fs-extra'
 import http from 'http'
 import https from 'https'
+import 'reflect-metadata'
 import binomiodb from './db'
 import meliRouter from './routes/meliTokenRoutes'
 import notionRouter from './routes/notionRoutes'
 import checkVersion from './utils/checkVersion'
 import { AMBIENTE, HTTPS_CRT, HTTPS_KEY, PORT } from './utils/env'
-import { logger, loggerHttp } from './utils/logger'
-
+import { logger } from './utils/logger'
+// import { logger, loggerHttp } from './utils/logger'
 dotenv.config()
 const app = express()
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-app.use(loggerHttp)
+// app.use(loggerHttp)
 app.use(cors())
 
 binomiodb
