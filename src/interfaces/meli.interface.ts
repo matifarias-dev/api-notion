@@ -391,3 +391,14 @@ export interface ShippingResponse {
   status: string
   logistic_type: string
 }
+
+export interface NotificationBody {
+  _id: string
+  resource: string
+  user_id: number
+  topic: string
+  application_id: number
+  attempts: number
+  sent: string
+  received: string
+}

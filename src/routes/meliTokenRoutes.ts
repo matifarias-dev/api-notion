@@ -41,4 +41,8 @@ meliRouter.get('/auth-time-left', (_, res) => {
 })
 
 // https://localhost:3000/meli/notifications
+meliRouter.post('/notifications', (req, res) => {
+  res.status(200).send('OK')
+  logger.info('Notification received: ' + JSON.stringify(req.body))
+})
 export default meliRouter
