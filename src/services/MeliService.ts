@@ -15,6 +15,7 @@ import {
 import { toMeliToken } from '../mappers/meli.mapper.'
 import MeliTokenRepository from '../repositories/MeliTokenRepository'
 import {
+  BASE_URL_MELI,
   CUTOFF_T,
   GRANT_TYPE,
   LOGISTIC_TYPE,
@@ -52,7 +53,7 @@ export default class MeliService {
   private readonly getOrderSearchURL = (
     filter: MeliOrderFilter | null
   ): string => {
-    let baseUrl = `https://api.mercadolibre.com/orders/search?seller=${MELI_USER_ID}`
+    let baseUrl = `${BASE_URL_MELI}/orders/search?seller=${MELI_USER_ID}`
     if (filter !== null) {
       Object.entries(filter).forEach(([key, value]) => {
         if (value !== null) baseUrl += `&${key}=${value}`
@@ -63,19 +64,19 @@ export default class MeliService {
   }
 
   private readonly getOrderDetailURL = (orderId: number): string => {
-    const url = 'https://api.mercadolibre.com/orders/' + orderId
+    const url = `${BASE_URL_MELI}/orders/` + orderId
     logger.info(url)
     return url
   }
 
   private readonly getShippingDetailURL = (orderId: number): string => {
-    const url = `https://api.mercadolibre.com/orders/${orderId}/shipments`
+    const url = `${BASE_URL_MELI}/orders/${orderId}/shipments`
     logger.info(url)
     return url
   }
 
   private readonly getItemDetailURL = (itemId: string): string => {
-    const url = `https://api.mercadolibre.com/items/${itemId}`
+    const url = `${BASE_URL_MELI}/items/${itemId}`
     logger.info(url)
     return url
   }
@@ -83,7 +84,7 @@ export default class MeliService {
   async changeCodeForToken (code?: string): Promise<MeliToken> {
     try {
       const response: AxiosResponse<MeliTokenResponse> = await axios.post(
-        'https://api.mercadolibre.com/oauth/token',
+        `${BASE_URL_MELI}/oauth/token`,
         {
           grant_type: GRANT_TYPE.authorization,
           client_id: APP_ID_MELI,

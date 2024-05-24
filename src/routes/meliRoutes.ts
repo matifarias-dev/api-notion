@@ -10,7 +10,6 @@ meliRouter.get('/login', (_, res) => {
   res.redirect(meliService.getAuthURL())
 })
 
-// https://localhost:3000/meli/auth-success
 meliRouter.get('/auth-success', (req, res) => {
   const code = String(req.query.code)
   logger.info('code status: ' + code)

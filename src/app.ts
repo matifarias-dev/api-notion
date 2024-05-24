@@ -6,10 +6,15 @@ import http from 'http'
 import https from 'https'
 import 'reflect-metadata'
 import binomiodb from './db'
-import meliRouter from './routes/meliRoutes'
-import notionRouter from './routes/notionRoutes'
-import checkVersion from './utils/checkVersion'
-import { AMBIENTE, HTTPS_CRT, HTTPS_KEY, PORT } from './utils/env'
+
+import Router from './routes/routes'
+import {
+  AMBIENTE,
+  CONTEXT_ROOT,
+  HTTPS_CRT,
+  HTTPS_KEY,
+  PORT
+} from './utils/env'
 import { logger } from './utils/logger'
 // import { logger, loggerHttp } from './utils/logger'
 dotenv.config()
@@ -45,11 +50,6 @@ server.listen(PORT, () => {
   logger.info(`connected at port: ${PORT}`)
 })
 
-app.get('/healthCheck', (_, res) =>
-  res.status(200).send({ status: 'OK', version: checkVersion() })
-)
-
-app.use('/notion', notionRouter)
-app.use('/meli', meliRouter)
+app.use(CONTEXT_ROOT, Router)
 
 export default app

@@ -1,4 +1,6 @@
 export const TOKEN_BEARER = 'bearer'
+export const BASE_URL_MELI = 'https://api.mercadolibre.com'
+export const BASE_URL_NOTION = ''
 
 export const GRANT_TYPE = {
   authorization: 'authorization_code',

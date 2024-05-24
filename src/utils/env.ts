@@ -14,3 +14,4 @@ export const MELI_USER_ID = Number(process.env.MELI_USER_ID) ?? 0
 
 export const DB_PORT = Number(process.env.DB_PORT) ?? 27017
 export const DB_HOST = process.env.DB_HOST ?? 'localhost'
+export const CONTEXT_ROOT = process.env.CONTEXT_ROOT ?? '/api/v1'
