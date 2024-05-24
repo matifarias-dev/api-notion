@@ -1,26 +1,17 @@
 import { Client } from '@notionhq/client'
 import { type QueryDatabaseResponse } from '@notionhq/client/build/src/api-endpoints'
-import { NOTION_TOKEN } from '../utils/env'
+import { NOTION_SECRET } from '../utils/env'
 
-export interface NotionServiceInterface {
-  getDataBasePrueba: () => Promise<QueryDatabaseResponse>
-}
-
-const notionService = (): NotionServiceInterface => {
-  async function getDataBasePrueba (): Promise<QueryDatabaseResponse> {
+export default class NotionService {
+  async getDataBaseMeli (): Promise<QueryDatabaseResponse> {
     const notion = new Client({
-      auth: NOTION_TOKEN
+      auth: NOTION_SECRET
     })
-    console.log(NOTION_TOKEN)
+    console.log(NOTION_SECRET)
 
     const response = await notion.databases.query({
-      database_id: '54f40b25f1b9445b9571947c28289469'
+      database_id: '2adb6860d9e54753888d60e778c94138'
     })
     return response
   }
-  return {
-    getDataBasePrueba
-  }
 }
-
-export default notionService

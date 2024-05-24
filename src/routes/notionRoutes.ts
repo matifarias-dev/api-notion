@@ -1,12 +1,12 @@
 import { Router } from 'express'
-import notionService from '../services/notionService'
+import NotionService from '../services/notionService'
 
 const notionRouter = Router()
-const service = notionService()
+const notionService = new NotionService()
 
-notionRouter.get('/prueba', (_, res) => {
-  service
-    .getDataBasePrueba()
+notionRouter.get('/getDBMeli', (_, res) => {
+  notionService
+    .getDataBaseMeli()
     .then((data) => {
       res.status(200).send(data)
     })

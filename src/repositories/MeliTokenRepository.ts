@@ -12,8 +12,6 @@ export default class MeliTokenRepository {
   async getMeliToken (
     where: FindOptionsWhere<MeliToken> | Array<FindOptionsWhere<MeliToken>>
   ): Promise<MeliToken | null> {
-    const meliToken = await meliRepository.findOneBy(where)
-    console.log('MeliToken db: ' + JSON.stringify(meliToken))
-    return meliToken
+    return await meliRepository.findOneBy(where)
   }
 }

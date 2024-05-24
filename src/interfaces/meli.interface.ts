@@ -402,3 +402,382 @@ export interface NotificationBody {
   sent: string
   received: string
 }
+
+export interface MeliOrderFilter {
+  item: string | null
+  tags: string | null
+  'order.status': string | null
+  'order.date_created.from': string | null
+  'order.date_created.to': string | null
+  sort: string | null
+  limit: string | null
+}
+
+interface Item {
+  id: string
+  title: string
+  category_id: string
+  variation_id: number
+  seller_custom_field: any
+  variation_attributes: VariationAttribute[]
+  warranty: string
+  condition: string
+  seller_sku: string
+  global_price: any
+  net_weight: any
+  user_product_id: string
+}
+
+interface VariationAttribute {
+  name: string
+  id: string
+  value_id: string
+  value_name: string
+}
+
+interface RequestedQuantity {
+  value: number
+  measure: string
+}
+
+interface Payment {
+  id: number
+  order_id: number
+  payer_id: number
+  collector: {
+    id: number
+  }
+  card_id: number
+  reason: string
+  site_id: string
+  payment_method_id: string
+  currency_id: string
+  installments: number
+  issuer_id: string
+  atm_transfer_reference: {
+    transaction_id: any
+    company_id: any
+  }
+  coupon_id: any
+  activation_uri: any
+  operation_type: string
+  payment_type: string
+  available_actions: string[]
+  status: string
+  status_code: any
+  status_detail: string
+  transaction_amount: number
+  transaction_amount_refunded: number
+  taxes_amount: number
+  shipping_cost: number
+  coupon_amount: number
+  overpaid_amount: number
+  total_paid_amount: number
+  installment_amount: number
+  deferred_period: any
+  date_approved: string
+  transaction_order_id: any
+  date_created: string
+  date_last_modified: string
+  marketplace_fee: number
+  reference_id: any
+  authorization_code: string
+}
+
+interface Shipping {
+  id: number
+}
+
+interface Seller {
+  id: number
+  user_type: any
+  tags: any[]
+  internal_tags: any[]
+}
+
+interface Buyer {
+  id: number
+  nickname: string
+  first_name: string
+  last_name: string
+  user_type: any
+  tags: any[]
+  internal_tags: any[]
+}
+
+interface Taxes {
+  amount: any
+  currency_id: any
+  id: any
+}
+
+interface OrderRequest {
+  change: any
+  return: any
+}
+
+interface Feedback {
+  seller: any
+  buyer: any
+}
+
+interface Context {
+  channel: string
+  site: string
+  flows: any[]
+  application: any
+  product_id: any
+  store_id: any
+}
+
+interface Coupon {
+  amount: number
+  id: any
+}
+
+export interface OrderDetails {
+  id: number
+  date_created: string
+  last_updated: string
+  expiration_date: string
+  date_closed: string
+  comment: any
+  pack_id: any
+  pickup_id: any
+  fulfilled: any
+  hidden_for_seller: any
+  buying_mode: string
+  shipping_cost: any
+  application_id: any
+  mediations: any[]
+  total_amount: number
+  paid_amount: number
+  coupon: Coupon
+  order_items: OrderItem[]
+  currency_id: string
+  payments: Payment[]
+  shipping: Shipping
+  status: string
+  status_detail: any
+  tags: string[]
+  internal_tags: string[]
+  feedback: Feedback
+  context: Context
+  seller: Seller
+  buyer: Buyer
+  taxes: Taxes
+  cancel_detail: any
+  manufacturing_ending_date: any
+  order_request: OrderRequest
+}
+
+interface OrderItem {
+  item: Item
+  quantity: number
+  requested_quantity: RequestedQuantity
+  picked_quantity: any
+  unit_price: number
+  full_unit_price: number
+  currency_id: string
+  manufacturing_days: any
+  sale_fee: number
+  listing_type_id: string
+  base_exchange_rate: any
+  base_currency_id: any
+  element_id: any
+  discounts: any
+  bundle: any
+  compat_id: any
+}
+
+export interface MeliNotionItem {
+  title: string
+  img: string // pictures[0].secure_url
+  quantity: string
+  productId: string
+  sku: string // seller_sku
+}
+
+export interface MeliNotionTable {
+  orderId: number
+  created: string
+  clientName: string // buyer.first_name + buyer.last_name
+  clientUser: string // buyer.nickname
+  reciverName: string
+  tags: string[]
+  logisticType: string
+  packItems: MeliNotionItem[]
+}
+
+interface SaleTerm {
+  id: string
+  name: string
+  value_id: string
+  value_name: string
+  value_struct: any
+  values: Array<{
+    id: string
+    name: string
+    struct: any
+  }>
+  value_type: string
+}
+
+interface Picture {
+  id: string
+  url: string
+  secure_url: string
+  size: string
+  max_size: string
+  quality: string
+}
+
+interface SellerAddress {
+  comment: string
+  address_line: string
+  zip_code: string
+  city: {
+    id: string
+    name: string
+  }
+  state: {
+    id: string
+    name: string
+  }
+  country: {
+    id: string
+    name: string
+  }
+  search_location: {
+    city: {
+      id: string
+      name: string
+    }
+    state: {
+      id: string
+      name: string
+    }
+  }
+  latitude: number
+  longitude: number
+  id: number
+}
+
+interface Attribute {
+  id: string
+  name: string
+  value_id: string
+  value_name: string
+  values: Array<{
+    id: string
+    name: string
+    struct: any
+  }>
+  value_type: string
+}
+
+interface AttributeCombination {
+  id: string
+  name: string
+  value_id: string
+  value_name: string
+  values: Array<{
+    id: string
+    name: string
+    struct: any
+  }>
+  value_type: string
+}
+
+interface Variation {
+  id: number
+  price: number
+  attribute_combinations: AttributeCombination[]
+  available_quantity: number
+  sold_quantity: number
+  sale_terms: SaleTerm[]
+  picture_ids: string[]
+  seller_custom_field: any
+  catalog_product_id: any
+  inventory_id: string
+  item_relations: any[]
+  user_product_id: string
+}
+
+interface Shipping {
+  mode: string
+  methods: any[]
+  tags: string[]
+  dimensions: string
+  local_pick_up: boolean
+  free_shipping: boolean
+  logistic_type: string
+  store_pick_up: boolean
+}
+
+interface Geolocation {
+  latitude: number
+  longitude: number
+}
+
+export interface ItemDetailResponse {
+  id: string
+  site_id: string
+  title: string
+  seller_id: number
+  category_id: string
+  user_product_id: string
+  official_store_id: string
+  price: number
+  base_price: number
+  original_price: any
+  inventory_id: any
+  currency_id: string
+  initial_quantity: number
+  available_quantity: number
+  sold_quantity: number
+  sale_terms: SaleTerm[]
+  buying_mode: string
+  listing_type_id: string
+  start_time: string
+  stop_time: string
+  end_time: string
+  expiration_time: string
+  condition: string
+  permalink: string
+  thumbnail_id: string
+  thumbnail: string
+  pictures: Picture[]
+  video_id: any
+  descriptions: any[]
+  accepts_mercadopago: boolean
+  non_mercado_pago_payment_methods: any[]
+  shipping: Shipping
+  international_delivery_mode: string
+  seller_address: SellerAddress
+  seller_contact: any
+  location: any
+  geolocation: Geolocation
+  coverage_areas: any[]
+  attributes: Attribute[]
+  warnings: any[]
+  listing_source: string
+  variations: Variation[]
+  status: string
+  sub_status: any[]
+  tags: string[]
+  warranty: string
+  catalog_product_id: any
+  domain_id: string
+  seller_custom_field: any
+  parent_item_id: any
+  differential_pricing: any
+  deal_ids: string[]
+  automatic_relist: boolean
+  date_created: string
+  last_updated: string
+  health: number
+  catalog_listing: boolean
+  item_relations: any[]
+  channels: string[]
+}
