@@ -33,7 +33,7 @@ interface RichTextContent {
   href: any // This could be a string or null
 }
 
-type PageProperty = Record<
+export type PageProperty = Record<
 string,
 {
   id: string

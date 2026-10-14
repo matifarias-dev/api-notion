@@ -15,4 +15,26 @@ notionRouter.get('/getDBMeli', (_, res) => {
     })
 })
 
+notionRouter.get('/getDBMeliProperties', (_, res) => {
+  notionService
+    .getDataBaseMeliProperties()
+    .then((data) => {
+      res.status(200).send(data)
+    })
+    .catch((err) => {
+      res.status(500).send({ message: err.message })
+    })
+})
+
+notionRouter.get('/writeDataOnMeliDB', (_, res) => {
+  notionService
+    .writeDataOnMeliDB()
+    .then((data) => {
+      res.status(200).send(data)
+    })
+    .catch((err) => {
+      res.status(500).send({ message: err.message })
+    })
+})
+
 export default notionRouter

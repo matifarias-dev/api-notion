@@ -39,9 +39,9 @@
     // "checkJs": true,                                  /* Enable error reporting in type-checked JavaScript files. */
     // "maxNodeModuleJsDepth": 1,                        /* Specify the maximum folder depth used for checking JavaScript files from 'node_modules'. Only applicable with 'allowJs'. */
     /* Emit */
-    "declaration": true /* Generate .d.ts files from TypeScript and JavaScript files in your project. */,
+    "declaration": false /* Emit .d.ts files for public APIs. */,
     // "declarationMap": true /* Create sourcemaps for d.ts files. */,
-    "emitDeclarationOnly": true /* Only output d.ts files and not JavaScript files. */,
+    "emitDeclarationOnly": false /* Emit JavaScript as well as declarations. */,
     // "sourceMap": true,                                /* Create source map files for emitted JavaScript files. */
     // "outFile": "./",                                  /* Specify a file that bundles all outputs into one JavaScript file. If 'declaration' is true, also designates a file that bundles all .d.ts output. */
     "outDir": "./build" /* Specify an output folder for all emitted files. */,
@@ -91,5 +91,7 @@
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
     "skipLibCheck": true /* Skip type checking all .d.ts files. */
-  }
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["mcp", "node_modules", "build"]
 }

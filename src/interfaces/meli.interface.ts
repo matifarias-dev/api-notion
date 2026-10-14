@@ -1,4 +1,5 @@
 import { type errorTypes, type grantTypes } from '../types/meli.types'
+import { type NotionTableStatus } from '../utils/enums'
 
 export interface MeliTokenResponse {
   access_token: string
@@ -599,15 +600,23 @@ export interface MeliNotionItem {
 }
 
 export interface MeliNotionTable {
-  orderId: number
-  created: string
+  title: string
+  date: string
   clientName: string // buyer.first_name + buyer.last_name
   clientUser: string // buyer.nickname
+  orderId: number
+  status: NotionTableStatus | statusType
+  logisticType: string
   reciverName: string
   tags: string[]
-  logisticType: string
   packItems: MeliNotionItem[]
 }
+
+export type statusType =
+  | 'Ventas'
+  | 'Preparacion'
+  | 'Pegar Etiqueta'
+  | 'Listos Para Enviar'
 
 interface SaleTerm {
   id: string

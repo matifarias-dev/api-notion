@@ -1,55 +1,49 @@
 import cors from 'cors'
-import dotenv from 'dotenv'
 import express from 'express'
-import { readFileSync } from 'fs-extra'
 import http from 'http'
-import https from 'https'
 import 'reflect-metadata'
 import binomiodb from './db'
 
 import Router from './routes/routes'
 import {
   AMBIENTE,
-  CONTEXT_ROOT,
-  HTTPS_CRT,
-  HTTPS_KEY,
+  CORS_ORIGIN,
   PORT
 } from './utils/env'
 import { logger } from './utils/logger'
-// import { logger, loggerHttp } from './utils/logger'
-dotenv.config()
+
 const app = express()
 
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
-// app.use(loggerHttp)
-app.use(cors())
-
-binomiodb
-  .initialize()
-  .then((datasource) => {
-    logger.info('Connected to db name: ' + String(datasource.options.database))
-  })
-  .catch((err) => {
-    console.log(err)
-  })
-
-let server = http.createServer(app)
-if (AMBIENTE === 'local') {
-  logger.info('Ambiente local')
-  server = https.createServer(
-    {
-      key: readFileSync(HTTPS_KEY),
-      cert: readFileSync(HTTPS_CRT)
-    },
-    app
+app.use(
+  cors(
+    CORS_ORIGIN === ''
+      ? { origin: false }
+      : { origin: CORS_ORIGIN.split(',').map((origin) => origin.trim()) }
   )
+)
+app.use(Router)
+
+export const startServer = async (): Promise<void> => {
+  try {
+    const datasource = await binomiodb.initialize()
+    logger.info(
+      `Connected to db name: ${String(datasource.options.database)} (${AMBIENTE})`
+    )
+
+    const server = http.createServer(app)
+    server.listen(PORT, () => {
+      logger.info(`Connected at port: ${PORT}`)
+    })
+  } catch (err) {
+    logger.error({ err }, 'Unable to start api-notion')
+    process.exitCode = 1
+  }
 }
 
-server.listen(PORT, () => {
-  logger.info(`connected at port: ${PORT}`)
-})
-
-app.use(CONTEXT_ROOT, Router)
+if (require.main === module) {
+  void startServer()
+}
 
 export default app

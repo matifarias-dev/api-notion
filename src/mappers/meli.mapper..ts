@@ -1,4 +1,4 @@
-import { ObjectId } from 'typeorm'
+import { ObjectId } from 'mongodb'
 import MeliToken from '../entities/MeliToken'
 import { type MeliTokenResponse } from '../interfaces/meli.interface'
 

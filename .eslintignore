@@ -1,0 +1,5 @@
+build/
+mcp/
+node_modules/
+assets/
+Json/

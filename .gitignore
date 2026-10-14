@@ -1,7 +1,10 @@
 /node_modules
+/mcp/node_modules
 /assets
 /dist
 /build
+/mcp/build
+.env
 
 code.json
 token.json
@@ -166,7 +169,6 @@ dist
 
 # Stores VSCode versions used for testing VSCode extensions
 .vscode-test
-
 # yarn v2
 .yarn/cache
 .yarn/unplugged

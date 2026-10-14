@@ -1,11 +1,14 @@
-FROM node:lts as builder
-COPY . /app
+FROM node:23.11.0-slim AS builder
 WORKDIR /app
-RUN npm install
+COPY package*.json ./
+RUN npm ci
+COPY . .
 RUN npm run build
 
-FROM node:lts
-COPY --from=builder /app/build /app
+FROM node:23.11.0-slim
 WORKDIR /app
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/build ./build
+RUN npm ci --omit=dev
 EXPOSE 3000
-CMD ["node", "app.js"]
+CMD ["node", "build/app.js"]

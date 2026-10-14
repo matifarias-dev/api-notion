@@ -1,0 +1,112 @@
+name: Deploy api-notion
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '.github/workflows/deploy.yml'
+      - 'docker-compose.vps.yml'
+      - 'dockerfile'
+      - 'nginx/api-notion.conf'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'src/**'
+      - 'tsconfig.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-api-notion
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Validate required secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+          VPS_CORE_PATH: ${{ secrets.VPS_CORE_PATH }}
+          NOTION_SECRET: ${{ secrets.NOTION_SECRET }}
+          NOTION_MELI_DB: ${{ secrets.NOTION_MELI_DB }}
+          APP_ID_MELI: ${{ secrets.APP_ID_MELI }}
+          CLIENT_SECRET_MELI: ${{ secrets.CLIENT_SECRET_MELI }}
+          REDIRECT_MELI_URL: ${{ secrets.REDIRECT_MELI_URL }}
+          MELI_USER_ID: ${{ secrets.MELI_USER_ID }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+        run: |
+          set -euo pipefail
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY VPS_APP_PATH VPS_CORE_PATH NOTION_SECRET NOTION_MELI_DB APP_ID_MELI CLIENT_SECRET_MELI REDIRECT_MELI_URL MELI_USER_ID CORS_ORIGIN; do
+            if [ -z "${!name}" ]; then
+              echo "::error title=Missing secret::${name} is required"
+              exit 1
+            fi
+          done
+
+      - name: Upload Nginx route
+        uses: appleboy/scp-action@v1.0.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          source: nginx/api-notion.conf
+          target: ${{ secrets.VPS_CORE_PATH }}/nginx/locations.d/
+          strip_components: 1
+          overwrite: true
+
+      - name: Deploy application and reload Nginx
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          VPS_APP_PATH: ${{ secrets.VPS_APP_PATH }}
+          VPS_CORE_PATH: ${{ secrets.VPS_CORE_PATH }}
+          NOTION_SECRET: ${{ secrets.NOTION_SECRET }}
+          NOTION_MELI_DB: ${{ secrets.NOTION_MELI_DB }}
+          APP_ID_MELI: ${{ secrets.APP_ID_MELI }}
+          CLIENT_SECRET_MELI: ${{ secrets.CLIENT_SECRET_MELI }}
+          REDIRECT_MELI_URL: ${{ secrets.REDIRECT_MELI_URL }}
+          MELI_USER_ID: ${{ secrets.MELI_USER_ID }}
+          CORS_ORIGIN: ${{ secrets.CORS_ORIGIN }}
+          DB_USERNAME: ${{ secrets.DB_USERNAME }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          envs: VPS_APP_PATH,VPS_CORE_PATH,NOTION_SECRET,NOTION_MELI_DB,APP_ID_MELI,CLIENT_SECRET_MELI,REDIRECT_MELI_URL,MELI_USER_ID,CORS_ORIGIN,DB_USERNAME,DB_PASSWORD
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "$VPS_APP_PATH"
+            git fetch origin master
+            git checkout --force origin/master
+
+            umask 077
+            {
+              printf 'PORT=3000\n'
+              printf 'AMBIENTE=prod\n'
+              printf 'CORS_ORIGIN=%s\n' "$CORS_ORIGIN"
+              printf 'NOTION_SECRET=%s\n' "$NOTION_SECRET"
+              printf 'NOTION_MELI_DB=%s\n' "$NOTION_MELI_DB"
+              printf 'APP_ID_MELI=%s\n' "$APP_ID_MELI"
+              printf 'CLIENT_SECRET_MELI=%s\n' "$CLIENT_SECRET_MELI"
+              printf 'REDIRECT_MELI_URL=%s\n' "$REDIRECT_MELI_URL"
+              printf 'MELI_USER_ID=%s\n' "$MELI_USER_ID"
+              printf 'DB_HOST=mongo-core\n'
+              printf 'DB_PORT=27017\n'
+              printf 'DB_USERNAME=%s\n' "$DB_USERNAME"
+              printf 'DB_PASSWORD=%s\n' "$DB_PASSWORD"
+              printf 'DB_AUTH_SOURCE=admin\n'
+            } > .env
+
+            docker compose -f docker-compose.vps.yml up -d --build --remove-orphans
+            docker exec nginx-core nginx -t
+            docker exec nginx-core nginx -s reload

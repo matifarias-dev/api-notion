@@ -76,9 +76,9 @@ meliRouter.get('/orders/:id', (req, res) => {
 meliRouter.get('/orders/:id/shipments', (req, res) => {
   if (req.params.id === null) res.status(400).send('missing argument id')
   meliService
-    .getOrderDetails(Number(req.params.id))
-    .then((order) => {
-      return res.status(200).send(order)
+    .getShippingDetails(Number(req.params.id))
+    .then((shipment) => {
+      return res.status(200).send(shipment)
     })
     .catch((err) => {
       logger.error(err)

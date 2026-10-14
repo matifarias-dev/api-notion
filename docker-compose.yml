@@ -1,30 +1,38 @@
-version: "3.8"
+name: api-notion-local
 
 volumes:
-  volumen-api-notion:
+  api-notion-node-modules:
 
 services:
-  db-api-notion:
-    image: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-     - volumen-api-notion:/data/db
-
   api-notion:
     build:
       context: .
-      dockerfile: dockerfile
-    environment:
-      - DB_HOST=db-api-notion
-      - DB_PORT=27017
-    links:
-      - db-api-notion
-    ports:
-        - "3000:3000"
-    restart: always
-    depends_on:
-     - db-api-notion
+      dockerfile: dockerfile.dev.yml
     env_file:
       - ./.env
-    
+    environment:
+      PORT: "3000"
+      AMBIENTE: "local"
+      CORS_ORIGIN: "http://localhost:3000"
+      DB_HOST: host.docker.internal
+      DB_PORT: "27018"
+      DB_AUTH_SOURCE: admin
+    ports:
+      - "3000:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - .:/app
+      - api-notion-node-modules:/app/node_modules
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/healthCheck', (response) => process.exit(response.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))"
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
