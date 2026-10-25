@@ -3,6 +3,10 @@
 		"mercadolibre-devsite-mcp": {
 			"url": "https://mcp.mercadolibre.com/devsite/v1/mcp",
 			"type": "http"
+		},
+		"api-notion-mcp": {
+			"url": "http://0.0.0.0:4000/mcp",
+			"type": "http"
 		}
 	}
 }

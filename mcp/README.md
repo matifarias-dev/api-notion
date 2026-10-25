@@ -1,6 +1,6 @@
 # api-notion MCP Server
 
-MCP server that exposes all api-notion endpoints as tools for AI assistants.
+HTTP MCP server that exposes all api-notion endpoints as tools for AI assistants and n8n.
 
 ## Setup
 
@@ -9,7 +9,7 @@ npm install
 npm run build
 ```
 
-Copy `.env.example` to `.env` and adjust as needed.
+Copy `.env.example` to `.env` and adjust as needed. The server uses the official Streamable HTTP transport and exposes MCP at `/mcp`.
 
 ## Tools
 
@@ -29,24 +29,52 @@ Copy `.env.example` to `.env` and adjust as needed.
 | `notion_get_meli_db_properties` | Notion DB column schema |
 | `notion_write_today_orders` | Sync today's orders to Notion |
 
+## Run locally
+
+Start the API first, then run the MCP server:
+
+```bash
+cp .env.example .env
+npm install
+npm run build
+npm start
+```
+
+The MCP endpoint is:
+
+```text
+http://localhost:4000/mcp
+```
+
+Health check:
+
+```bash
+curl http://localhost:4000/health
+```
+
+The MCP server calls the API through `API_BASE_URL`, which defaults to `http://localhost:3000`.
+
+## n8n
+
+Configure the MCP client node with:
+
+```text
+http://<host>:4000/mcp
+```
+
+If n8n runs in Docker on the same host, use a hostname reachable from its network, such as `host.docker.internal` for local development or the internal Docker service name in a shared Compose network.
+
+For production, expose this endpoint through the central Nginx/Cloudflare layer and protect it with the infrastructure authentication layer before making it public.
+
 ## Claude Desktop config
 
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+The current server uses HTTP, so clients that support remote MCP can use:
 
-```json
-{
-  "mcpServers": {
-    "api-notion": {
-      "command": "node",
-      "args": ["/absolute/path/to/api-notion/mcp/build/index.js"],
-      "env": {
-        "API_BASE_URL": "http://localhost:3000",
-        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
-      }
-    }
-  }
-}
+```text
+http://localhost:4000/mcp
 ```
+
+Clients that only support stdio require a separate stdio adapter; this project no longer starts in stdio mode.
 
 ## Dev
 

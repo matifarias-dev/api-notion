@@ -1,14 +1,19 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
+import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
   type Tool
 } from '@modelcontextprotocol/sdk/types.js'
 import axios from 'axios'
+import { randomUUID } from 'crypto'
+import http from 'http'
 import https from 'https'
 
 const BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000'
+const MCP_HOST = process.env.MCP_HOST ?? '0.0.0.0'
+const MCP_PORT = Number(process.env.MCP_PORT ?? 4000)
+const MCP_PATH = process.env.MCP_PATH ?? '/mcp'
 
 const httpsAgent =
   process.env.NODE_TLS_REJECT_UNAUTHORIZED === '0'
@@ -16,11 +21,6 @@ const httpsAgent =
     : undefined
 
 const api = axios.create({ baseURL: BASE_URL, httpsAgent })
-
-const server = new Server(
-  { name: 'api-notion-mcp', version: '1.0.0' },
-  { capabilities: { tools: {} } }
-)
 
 const tools: Tool[] = [
   {
@@ -155,9 +155,15 @@ const tools: Tool[] = [
   }
 ]
 
-server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))
+const createServer = (): Server => {
+  const server = new Server(
+    { name: 'api-notion-mcp', version: '1.0.0' },
+    { capabilities: { tools: {} } }
+  )
 
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+  server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools }))
+
+  server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args = {} } = request.params
 
   const ok = (data: unknown) => ({
@@ -266,9 +272,132 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
     return fail(e instanceof Error ? e.message : String(e))
   }
+  })
+
+  return server
+}
+
+const readRequestBody = async (request: http.IncomingMessage): Promise<unknown> => {
+  const chunks: Buffer[] = []
+  let size = 0
+
+  for await (const chunk of request) {
+    const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
+    size += buffer.length
+    if (size > 1024 * 1024) {
+      throw new Error('Request body exceeds the 1 MB limit')
+    }
+    chunks.push(buffer)
+  }
+
+  if (chunks.length === 0) return undefined
+  return JSON.parse(Buffer.concat(chunks).toString('utf8'))
+}
+
+const sendJson = (
+  response: http.ServerResponse,
+  statusCode: number,
+  body: unknown
+): void => {
+  response.writeHead(statusCode, {
+    'Content-Type': 'application/json',
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, Mcp-Session-Id',
+    'Access-Control-Expose-Headers': 'Mcp-Session-Id'
+  })
+  response.end(JSON.stringify(body))
+}
+
+type McpSession = {
+  server: Server
+  transport: StreamableHTTPServerTransport
+}
+
+const sessions = new Map<string, McpSession>()
+
+const httpServer = http.createServer(async (request, response) => {
+  if (request.url === '/health') {
+    sendJson(response, 200, { status: 'OK' })
+    return
+  }
+
+  if (request.url !== MCP_PATH) {
+    sendJson(response, 404, { error: 'Not found' })
+    return
+  }
+
+  if (request.method === 'OPTIONS') {
+    response.writeHead(204, {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Accept, Mcp-Session-Id',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS'
+    })
+    response.end()
+    return
+  }
+
+  if (!['GET', 'POST', 'DELETE'].includes(request.method ?? '')) {
+    response.setHeader('Allow', 'GET, POST, DELETE, OPTIONS')
+    sendJson(response, 405, { error: 'Method not allowed' })
+    return
+  }
+
+  try {
+    const body = request.method === 'POST'
+      ? await readRequestBody(request)
+      : undefined
+    const sessionId = request.headers['mcp-session-id']
+    let session = typeof sessionId === 'string' ? sessions.get(sessionId) : undefined
+
+    if (session == null) {
+      const isInitializeRequest =
+        request.method === 'POST' &&
+        typeof body === 'object' &&
+        body != null &&
+        'method' in body &&
+        body.method === 'initialize'
+
+      if (!isInitializeRequest) {
+        sendJson(response, sessionId == null ? 400 : 404, {
+          error: sessionId == null
+            ? 'Mcp-Session-Id is required after initialize'
+            : 'Unknown MCP session'
+        })
+        return
+      }
+
+      session = {
+        server: createServer(),
+        transport: new StreamableHTTPServerTransport({
+          sessionIdGenerator: () => randomUUID()
+        })
+      }
+      await session.server.connect(session.transport)
+    }
+
+    await session.transport.handleRequest(request, response, body)
+
+    if (session.transport.sessionId != null) {
+      if (request.method === 'DELETE') {
+        sessions.delete(session.transport.sessionId)
+      } else {
+        sessions.set(session.transport.sessionId, session)
+      }
+    }
+  } catch (error) {
+    if (!response.headersSent) {
+      sendJson(response, 400, {
+        error: error instanceof Error ? error.message : String(error)
+      })
+    } else {
+      response.end()
+    }
+  }
 })
 
 void (async () => {
-  const transport = new StdioServerTransport()
-  await server.connect(transport)
+  httpServer.listen(MCP_PORT, MCP_HOST, () => {
+    console.error(`api-notion MCP listening on http://${MCP_HOST}:${MCP_PORT}${MCP_PATH}`)
+    console.error(`API base URL: ${BASE_URL}`)
+  })
 })()
